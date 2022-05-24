@@ -47,6 +47,12 @@ struct rtw_proc_hdl {
 
 #ifdef CONFIG_PROC_DEBUG
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0))
+#define rtw_proc_ops proc_ops
+#else
+#define rtw_proc_ops file_operations
+#endif
+
 int rtw_drv_proc_init(void);
 void rtw_drv_proc_deinit(void);
 struct proc_dir_entry *rtw_adapter_proc_init(struct net_device *dev);
