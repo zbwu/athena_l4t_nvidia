@@ -80,6 +80,16 @@ config NV_VIDEO_OV5693
 	  To compile this driver as a module, choose M here: the module
 	  will be called ov5693.
 
+config NV_VIDEO_OV7251
+	tristate "OmniVision OV7251 sensor support"
+	depends on I2C && VIDEO_V4L2 && VIDEO_V4L2_SUBDEV_API
+	help
+	  This is a Video4Linux2 sensor driver for the OmniVision
+	  OV7251 camera.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called ov7251.
+
 config NV_VIDEO_OV9281
 	tristate "OmniVision OV9281 camera sensor support"
 	depends on I2C && VIDEO_V4L2 && VIDEO_V4L2_SUBDEV_API
@@ -99,6 +109,16 @@ config NV_VIDEO_OV10823
 
 	  To compile this driver as a module, choose M here: the module
 	  will be called ov10823.
+
+config NV_VIDEO_OV13B10
+	tristate "OmniVision OV13B10 sensor support"
+	depends on I2C && VIDEO_V4L2 && VIDEO_V4L2_SUBDEV_API
+	help
+	  This is a Video4Linux2 sensor driver for the OmniVision
+	  OV13B10 camera.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called ov13b10.
 
 config NV_VIDEO_OV23850
 	tristate "OmniVision OV23850 sensor support"
