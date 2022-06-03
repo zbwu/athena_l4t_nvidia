@@ -717,9 +717,9 @@ static int ov13b10_debugfs_create(struct ov13b10 *priv)
 	int err = 0;
 	struct i2c_client *client = priv->i2c_client;
 	const char *devnode;
-	char debugfs_dir[16];
+	char debugfs_dir[20];
 
-	err = of_property_read_string(client->dev.of_node, "devnode", &devnode);
+	err = of_property_read_string(client->dev.of_node, "name", &devnode);
 	if (err) {
 		dev_err(&client->dev, "devnode not in DT\n");
 		return err;

@@ -160,6 +160,91 @@ static void ov7251_gpio_set(struct camera_common_data *s_data,
 	}
 }
 
+static int ov7251_update_sccb_id(struct camera_common_data *s_data)
+{
+	struct ov7251 *priv = (struct ov7251 *)s_data->priv;
+	uint8_t chip_id_high, chip_id_low, sccb_id;
+	struct device *dev = s_data->dev;
+	struct i2c_board_info brd;
+	struct i2c_adapter *adap;
+	struct i2c_client *client;
+	struct regmap *regmap;
+	uint32_t addr;
+	int err = 0;
+
+	static struct regmap_config config = {
+		.reg_bits = 16,
+		.val_bits = 8,
+	};
+
+	if (priv->i2c_client->addr == 0x60)
+		return 0;
+
+	err = camera_common_mclk_enable(s_data);
+	if (err) {
+		dev_err(dev,
+			"Error %d turning on mclk\n", err);
+		return err;
+	}
+
+	memset(&brd, 0, sizeof(brd));
+	snprintf(brd.type, I2C_NAME_SIZE, "ov7251_default");
+	brd.addr = 0x60; // ov7251 default address
+
+	adap = i2c_get_adapter(priv->i2c_client->adapter->nr);
+	if (!adap) {
+		dev_err(dev, "%s: Unable to get I2C adapter %d for device %s\n",
+			__func__, priv->i2c_client->adapter->nr, brd.type);
+		err = -EPROBE_DEFER;
+		goto error;
+	}
+
+	client = i2c_new_client_device(adap, &brd);
+	if (IS_ERR(client)) {
+		dev_err(dev, "%s: creating I2C device failed\n", __func__);
+		i2c_put_adapter(adap);
+		err = PTR_ERR(client);
+		goto error;
+	}
+
+	regmap = devm_regmap_init_i2c(client, &config);
+	if (IS_ERR(regmap)) {
+		dev_err(dev, "%s: creating I2C regmap failed\n", __func__);
+		i2c_unregister_device(client);
+		err = PTR_ERR(regmap);
+		goto error;
+	}
+
+	addr = priv->i2c_client->addr;
+	addr = addr << 1;
+	// write new i2c address
+	regmap_write(regmap, 0x0109, addr);
+	// enable sccb_pgm_id_en
+	regmap_write(regmap, 0x303B, BIT(1));
+
+	i2c_unregister_device(client);
+	i2c_put_adapter(adap);
+
+	// check chip id and sccb id
+	ov7251_read_reg(s_data, 0x300A, &chip_id_high);
+	ov7251_read_reg(s_data, 0x300B, &chip_id_low);
+	ov7251_read_reg(s_data, 0x0109, &sccb_id);
+	dev_info(dev, "chip id: %X%X sccb id: %X addr: %X\n",
+			chip_id_high, chip_id_low, sccb_id, sccb_id >> 1);
+
+	camera_common_mclk_disable(s_data);
+
+	if (sccb_id != addr)
+		return -EFAULT;
+
+	return 0;
+
+error:
+	camera_common_mclk_disable(s_data);
+
+	return err;
+}
+
 static int ov7251_power_on(struct camera_common_data *s_data)
 {
 	int err = 0;
@@ -194,6 +279,12 @@ static int ov7251_power_on(struct camera_common_data *s_data)
 		ov7251_gpio_set(s_data, pw->pwdn_gpio, 1);
 
 	usleep_range(2000, 2010);
+
+	err = ov7251_update_sccb_id(s_data);
+	if (err) {
+		dev_err(dev, "%s: update sccb_id failed\n", __func__);
+		goto ov7251_iovdd_fail;
+	}
 
 	pw->state = SWITCH_ON;
 
@@ -722,9 +813,9 @@ static int ov7251_debugfs_create(struct ov7251 *priv)
 	int err = 0;
 	struct i2c_client *client = priv->i2c_client;
 	const char *devnode;
-	char debugfs_dir[16];
+	char debugfs_dir[20];
 
-	err = of_property_read_string(client->dev.of_node, "devnode", &devnode);
+	err = of_property_read_string(client->dev.of_node, "name", &devnode);
 	if (err) {
 		dev_err(&client->dev, "devnode not in DT\n");
 		return err;
