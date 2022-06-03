@@ -136,6 +136,9 @@ int tegracam_device_register(struct tegracam_device *tc_dev)
 	}
 	tc_dev->s_data = s_data;
 	err = tc_dev->sensor_ops->power_get(tc_dev);
+	/* fixed-regulators maybe unavailable, try again later */
+	if (err == -EPROBE_DEFER)
+		return -EPROBE_DEFER;
 	if (err) {
 		dev_err(dev, "unable to power get\n");
 		return -EFAULT;
