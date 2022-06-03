@@ -49,7 +49,7 @@ static const ov7251_reg tp_colorbars[] = {
 
 static const ov7251_reg mode_640x480[] = {
 	{OV7251_TABLE_WAIT_MS, OV7251_WAIT_MS},
-	{0x0103,0x01},
+	// {0x0103,0x01}, // software reset
 	{0x0100,0x00},
 	{0x3005,0x00},
 	{0x3012,0xc3},
