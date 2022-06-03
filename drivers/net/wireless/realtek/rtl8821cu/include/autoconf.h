@@ -139,7 +139,7 @@
 	#define CONFIG_FIND_BEST_CHANNEL
 #endif
 
-#define CONFIG_P2P
+// #define CONFIG_P2P
 #ifdef CONFIG_P2P
 	/* The CONFIG_WFD is for supporting the Wi-Fi display */
 	#define CONFIG_WFD
@@ -171,7 +171,7 @@
 
 #define CONFIG_SKB_COPY	/* amsdu */
 
-#define CONFIG_RTW_LED
+// #define CONFIG_RTW_LED
 #ifdef CONFIG_RTW_LED
 	#define CONFIG_RTW_SW_LED
 	#ifdef CONFIG_RTW_SW_LED
